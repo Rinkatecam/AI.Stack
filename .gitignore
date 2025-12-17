@@ -1,0 +1,99 @@
+# AI.STACK .gitignore
+
+# Secrets and credentials - NEVER commit these
+secrets.conf
+*.secret
+*.key
+.env
+.env.*
+credentials*
+*credentials*
+*.pem
+*.p12
+
+# Installation state and config
+.install-state
+.install-config
+
+# User data directories
+user-data/
+databases/
+backups/
+knowledge/
+templates/
+
+# Docker volumes and data
+*.vol
+docker-volumes/
+
+# Log files
+*.log
+logs/
+install.log
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+tmp/
+temp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+.venv/
+
+# Node
+node_modules/
+npm-debug.log
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Test files
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Local development
+local/
+.local/
+dev/
+test-data/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Compressed files (except source distribution)
+# *.tar.gz
+# *.zip
