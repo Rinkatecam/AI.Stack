@@ -2,8 +2,8 @@
 title: AI Agent Orchestrator
 version: 2.0.0
 description: Delegate tasks to specialized AI models, run parallel queries, and chain workflows.
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 
 # SYSTEM PROMPT FOR AI
 # ====================

@@ -2,8 +2,8 @@
 title: Data Visualization Tool
 version: 2.0.0
 description: Generate charts, graphs, and molecular structures. Displays inline in chat with download option.
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, matplotlib, numpy, pillow
 
 # SYSTEM PROMPT FOR AI

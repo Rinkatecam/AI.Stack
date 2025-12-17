@@ -2,8 +2,8 @@
 title: Scientific Calculator
 version: 2.0.0
 description: Precise mathematical calculations, unit conversions, formula scaling, and statistical analysis.
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, numpy, scipy
 
 # SYSTEM PROMPT FOR AI

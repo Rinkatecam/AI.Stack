@@ -2,8 +2,8 @@
 title: Knowledge Base Tool
 version: 1.0.0
 description: Experience database with auto-indexing of DOCX files and image comparison capabilities.
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, python-docx, pillow, qdrant-client
 
 # SYSTEM PROMPT FOR AI

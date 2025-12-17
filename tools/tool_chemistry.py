@@ -2,8 +2,8 @@
 title: Chemical Properties Lookup
 version: 2.0.0
 description: Query PubChem database for chemical properties, safety data, and molecular information.
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, requests
 
 # SYSTEM PROMPT FOR AI

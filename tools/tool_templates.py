@@ -2,8 +2,8 @@
 title: Document Templates Tool
 version: 1.0.0
 description: Process DOCX templates with {{ PLACEHOLDER }} syntax. AI fills placeholders with user confirmation.
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, python-docx
 
 # SYSTEM PROMPT FOR AI

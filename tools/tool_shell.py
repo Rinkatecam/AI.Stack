@@ -2,8 +2,8 @@
 title: Shell Command Tool
 version: 2.0.0
 description: Execute shell commands (bash/cmd/powershell) with safety controls.
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 
 # SYSTEM PROMPT FOR AI
 # ====================

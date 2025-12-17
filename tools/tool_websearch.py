@@ -2,8 +2,8 @@
 title: Web Search Tool
 version: 2.0.0
 description: Search the internet using free methods (DuckDuckGo, Wikipedia, direct URL fetch). No API keys required!
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 
 # SYSTEM PROMPT FOR AI
 # ====================

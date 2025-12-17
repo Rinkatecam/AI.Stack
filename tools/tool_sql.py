@@ -2,8 +2,8 @@
 title: SQL Database Tool
 version: 2.0.0
 description: SQLite database management for data storage, queries, and analysis.
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic
 
 # SYSTEM PROMPT FOR AI

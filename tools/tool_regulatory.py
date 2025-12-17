@@ -2,8 +2,8 @@
 title: Regulatory Lookup Tool
 version: 1.0.0
 description: Multi-region regulatory database lookup for EU, US, WHO standards and medical device regulations.
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, requests
 
 # SYSTEM PROMPT FOR AI

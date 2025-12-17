@@ -2,8 +2,8 @@
 title: Files & Documents Tool
 version: 2.0.0
 description: Search, read, and semantically query files with RAG support. Includes PDF reading with OCR and Qdrant vector search integration.
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, pymupdf, pytesseract, pdf2image, pillow, qdrant-client
 
 # SYSTEM PROMPT FOR AI - READ THIS CAREFULLY

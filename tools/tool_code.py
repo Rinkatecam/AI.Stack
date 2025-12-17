@@ -2,8 +2,8 @@
 title: Code Analysis Tool
 version: 1.0.0
 description: Code formatting, analysis, syntax checking, and documentation generation.
-author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author: Rinkatecam
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic
 
 # SYSTEM PROMPT FOR AI
