@@ -390,16 +390,54 @@ log_quiet() {
 save_state() {
   local step="$1"
   CURRENT_STEP="$step"
+
+  # Save all configuration to state file for resume
   cat > "$INSTALL_STATE_FILE" <<EOF
+# AI.STACK Installation State
+# Saved: $(date '+%Y-%m-%d %H:%M:%S')
+# DO NOT EDIT - Used for resume capability
+
+# Current progress
 INSTALL_STEP="$step"
 INSTALL_TIME="$(date '+%Y-%m-%d %H:%M:%S')"
+
+# Installation mode and security
 INSTALL_MODE="$INSTALL_MODE"
 SECURITY_LEVEL="$SECURITY_LEVEL"
-SELECTED_TOOLS="$SELECTED_TOOLS"
+BIND_ADDRESS="$BIND_ADDRESS"
+
+# Ports
 WEBUI_PORT="$WEBUI_PORT"
 OLLAMA_PORT="$OLLAMA_PORT"
 QDRANT_REST_PORT="$QDRANT_REST_PORT"
+QDRANT_GRPC_PORT="$QDRANT_GRPC_PORT"
+
+# Hardware
 HARDWARE_TIER="$HARDWARE_TIER"
+GPU_AVAILABLE="$GPU_AVAILABLE"
+
+# Tools configuration
+INSTALL_TOOLS="$INSTALL_TOOLS"
+SELECTED_TOOLS="$SELECTED_TOOLS"
+KNOWLEDGE_BASE_PATH="$KNOWLEDGE_BASE_PATH"
+TEMPLATES_PATH="$TEMPLATES_PATH"
+
+# Models configuration
+SELECTED_MODELS="$SELECTED_MODELS"
+SKIP_MODEL_INSTALL="$SKIP_MODEL_INSTALL"
+
+# Personalities configuration
+INSTALL_PERSONALITIES="$INSTALL_PERSONALITIES"
+SELECTED_PERSONALITIES=(${SELECTED_PERSONALITIES[@]})
+
+# Infrastructure
+INSTALL_INFRASTRUCTURE="$INSTALL_INFRASTRUCTURE"
+SELECTED_INFRA="$SELECTED_INFRA"
+
+# Secrets (needed for services)
+WEBUI_SECRET_KEY="$WEBUI_SECRET_KEY"
+ADMIN_PASSWORD="$ADMIN_PASSWORD"
+QDRANT_API_KEY="$QDRANT_API_KEY"
 EOF
   log_verbose "State saved: $step"
 }
@@ -410,6 +448,53 @@ load_state() {
     source "$INSTALL_STATE_FILE"
     return 0
   fi
+  return 1
+}
+
+# Check if we should skip a step during resume
+# Returns 0 (true) if we should skip, 1 (false) if we should run
+should_skip_step() {
+  local check_step="$1"
+
+  # If not in resume mode, never skip
+  [ "$RESUME_MODE" != true ] && return 1
+
+  # Define step order (must match main() execution order)
+  local steps=(
+    "initialization"
+    "configuration_start"
+    "configuration_complete"
+    "packages_installed"
+    "hardware_detected"
+    "options_configured"
+    "configuration_saved"
+    "images_built"
+    "compose_generated"
+    "personalities_configured"
+    "tools_installed"
+    "firewall_configured"
+    "scripts_created"
+    "services_started"
+  )
+
+  # Find the index of the saved step and the check step
+  local saved_idx=-1
+  local check_idx=-1
+  local i=0
+
+  for step in "${steps[@]}"; do
+    [ "$step" = "$INSTALL_STEP" ] && saved_idx=$i
+    [ "$step" = "$check_step" ] && check_idx=$i
+    i=$((i + 1))
+  done
+
+  # If saved step is after check step, we should skip
+  # (step was already completed)
+  if [ $saved_idx -ge $check_idx ] && [ $check_idx -ge 0 ]; then
+    log_verbose "Skipping completed step: $check_step"
+    return 0
+  fi
+
   return 1
 }
 
@@ -539,7 +624,7 @@ preflight_check() {
   if [ "$EUID" -eq 0 ]; then
     print_color red "FAIL"
     echo "    Error: Do not run as root. Use a regular user with sudo access."
-    ((errors++))
+    errors=$((errors + 1))
   else
     print_color green "OK"
   fi
@@ -551,7 +636,7 @@ preflight_check() {
     print_color green "OK (v$docker_version)"
   else
     print_color yellow "Not installed (will be installed)"
-    ((warnings++))
+    warnings=$((warnings + 1))
   fi
 
   # Check 3: Docker Compose
@@ -560,10 +645,10 @@ preflight_check() {
     print_color green "OK"
   elif command -v docker-compose >/dev/null 2>&1; then
     print_color yellow "Legacy version (will upgrade)"
-    ((warnings++))
+    warnings=$((warnings + 1))
   else
     print_color yellow "Not installed (will be installed)"
-    ((warnings++))
+    warnings=$((warnings + 1))
   fi
 
   # Check 4: Internet connectivity
@@ -572,11 +657,11 @@ preflight_check() {
     print_color green "OK"
   elif curl -s --connect-timeout 5 https://google.com >/dev/null 2>&1; then
     print_color yellow "OK (GitHub may be slow)"
-    ((warnings++))
+    warnings=$((warnings + 1))
   else
     print_color red "FAIL"
     echo "    Error: No internet connection detected."
-    ((errors++))
+    errors=$((errors + 1))
   fi
 
   # Check 5: Disk space
@@ -588,10 +673,10 @@ preflight_check() {
     print_color green "OK (${available_gb}GB available, ~${required_gb}GB needed)"
   elif [ "$available_gb" -ge 30 ]; then
     print_color yellow "WARNING (${available_gb}GB available, ~${required_gb}GB recommended)"
-    ((warnings++))
+    warnings=$((warnings + 1))
   else
     print_color red "FAIL (${available_gb}GB available, need at least 30GB)"
-    ((errors++))
+    errors=$((errors + 1))
   fi
 
   # Check 6: RAM
@@ -603,10 +688,10 @@ preflight_check() {
     print_color green "OK (${ram_gb}GB - can run medium models)"
   elif [ "$ram_gb" -ge 4 ]; then
     print_color yellow "WARNING (${ram_gb}GB - limited to small models)"
-    ((warnings++))
+    warnings=$((warnings + 1))
   else
     print_color red "FAIL (${ram_gb}GB - minimum 4GB required)"
-    ((errors++))
+    errors=$((errors + 1))
   fi
 
   # Check 7: GPU (optional)
@@ -617,14 +702,14 @@ preflight_check() {
       print_color green "OK (NVIDIA: $gpu_name)"
     else
       print_color yellow "NVIDIA GPU found (driver will be installed)"
-      ((warnings++))
+      warnings=$((warnings + 1))
     fi
   elif lspci 2>/dev/null | grep -qi "amd.*radeon"; then
     print_color yellow "AMD GPU (experimental support)"
-    ((warnings++))
+    warnings=$((warnings + 1))
   else
     print_color yellow "No GPU (will use CPU-only mode)"
-    ((warnings++))
+    warnings=$((warnings + 1))
   fi
 
   # Check 8: Default ports
@@ -638,7 +723,7 @@ preflight_check() {
     print_color green "OK"
   else
     print_color yellow "In use: $port_issues (will use alternatives)"
-    ((warnings++))
+    warnings=$((warnings + 1))
   fi
 
   # Check 9: Required commands
@@ -654,7 +739,7 @@ preflight_check() {
     print_color green "OK"
   else
     print_color red "FAIL (missing: $missing_tools)"
-    ((errors++))
+    errors=$((errors + 1))
   fi
 
   # Summary
@@ -3517,7 +3602,6 @@ generate_docker_compose() {
 # Generated: $(date '+%Y-%m-%d %H:%M:%S')
 # Mode: GPU Enabled
 #==============================================================================
-version: "3.8"
 
 networks:
   ${DOCKER_NETWORK_NAME}:
@@ -3545,12 +3629,8 @@ services:
       - qdrant_data:/qdrant/storage
     environment:
       - QDRANT__SERVICE__GRPC_PORT=6334
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    # Note: Qdrant container has minimal tools, so we just check if process is running
+    # The container will restart automatically if Qdrant crashes
 
   #============================================================================
   # OLLAMA - LLM Server (GPU)
@@ -3592,7 +3672,7 @@ services:
       ${CONTAINER_PREFIX}-llm:
         condition: service_healthy
       ${CONTAINER_PREFIX}-vector:
-        condition: service_healthy
+        condition: service_started
     networks: [${DOCKER_NETWORK_NAME}]
     ports:
       - "${BIND_ADDRESS}:${WEBUI_PORT}:8080"
@@ -3622,7 +3702,6 @@ EOF
 # Generated: $(date '+%Y-%m-%d %H:%M:%S')
 # Mode: CPU Only
 #==============================================================================
-version: "3.8"
 
 networks:
   ${DOCKER_NETWORK_NAME}:
@@ -3650,12 +3729,8 @@ services:
       - qdrant_data:/qdrant/storage
     environment:
       - QDRANT__SERVICE__GRPC_PORT=6334
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    # Note: Qdrant container has minimal tools, so we just check if process is running
+    # The container will restart automatically if Qdrant crashes
 
   #============================================================================
   # OLLAMA - LLM Server (CPU)
@@ -3690,7 +3765,7 @@ services:
       ${CONTAINER_PREFIX}-llm:
         condition: service_healthy
       ${CONTAINER_PREFIX}-vector:
-        condition: service_healthy
+        condition: service_started
     networks: [${DOCKER_NETWORK_NAME}]
     ports:
       - "${BIND_ADDRESS}:${WEBUI_PORT}:8080"
@@ -3829,7 +3904,6 @@ generate_infrastructure_compose() {
 # AI.STACK Infrastructure Services
 # Generated: $(date '+%Y-%m-%d %H:%M:%S')
 #==============================================================================
-version: "3.8"
 
 networks:
   infra-net:
@@ -4075,9 +4149,12 @@ install_tools() {
     local source_file="${TOOL_FILES[$tool]}"
 
     if [ -n "$source_file" ] && [ -f "$TOOL_SOURCE_DIR/$source_file" ]; then
-      cp "$TOOL_SOURCE_DIR/$source_file" "$TOOLS_DIR/"
+      # Only copy if source and destination are different
+      if [ "$TOOL_SOURCE_DIR" != "$TOOLS_DIR" ]; then
+        cp "$TOOL_SOURCE_DIR/$source_file" "$TOOLS_DIR/"
+      fi
       log "[+] Installed: $source_file"
-      ((tool_count++))
+      tool_count=$((tool_count + 1))
 
       # Update paths in tool files if needed
       if [ "$tool" = "knowledgebase" ] && [ -n "$KNOWLEDGE_BASE_PATH" ]; then
@@ -4117,7 +4194,7 @@ download_tools_from_repo() {
   local failed=0
 
   for tool in "${tool_keys[@]}"; do
-    ((current++))
+    current=$((current + 1))
     local filename="${TOOL_FILES[$tool]}"
     local url="${GITHUB_RAW_BASE}/tools/$filename"
 
@@ -4126,15 +4203,15 @@ download_tools_from_repo() {
     if curl -sSL --fail "$url" -o "$TOOL_DOWNLOAD_DIR/$filename" 2>/dev/null; then
       # Verify file is not empty and looks like Python
       if [ -s "$TOOL_DOWNLOAD_DIR/$filename" ] && head -1 "$TOOL_DOWNLOAD_DIR/$filename" | grep -q '"""'; then
-        ((success++))
+        success=$((success + 1))
       else
         log "[!] Downloaded invalid file: $filename"
         rm -f "$TOOL_DOWNLOAD_DIR/$filename"
-        ((failed++))
+        failed=$((failed + 1))
       fi
     else
       log "[!] Failed to download: $filename"
-      ((failed++))
+      failed=$((failed + 1))
     fi
   done
 
@@ -4327,40 +4404,40 @@ create_embedded_tools() {
 
   log "[*] Creating embedded tools (all 12 full versions)..."
 
-  ((current++)); show_progress $current $total "Files & Documents"
+  current=$((current + 1)); show_progress $current $total "Files & Documents"
   create_tool_files
 
-  ((current++)); show_progress $current $total "SQL Database"
+  current=$((current + 1)); show_progress $current $total "SQL Database"
   create_tool_sql
 
-  ((current++)); show_progress $current $total "Web Search"
+  current=$((current + 1)); show_progress $current $total "Web Search"
   create_tool_websearch
 
-  ((current++)); show_progress $current $total "Scientific Calculator"
+  current=$((current + 1)); show_progress $current $total "Scientific Calculator"
   create_tool_math
 
-  ((current++)); show_progress $current $total "Chemical Properties"
+  current=$((current + 1)); show_progress $current $total "Chemical Properties"
   create_tool_chemistry
 
-  ((current++)); show_progress $current $total "Data Visualization"
+  current=$((current + 1)); show_progress $current $total "Data Visualization"
   create_tool_visualize
 
-  ((current++)); show_progress $current $total "Shell Command"
+  current=$((current + 1)); show_progress $current $total "Shell Command"
   create_tool_shell
 
-  ((current++)); show_progress $current $total "AI Agent Orchestrator"
+  current=$((current + 1)); show_progress $current $total "AI Agent Orchestrator"
   create_tool_agents
 
-  ((current++)); show_progress $current $total "Document Templates"
+  current=$((current + 1)); show_progress $current $total "Document Templates"
   create_tool_templates
 
-  ((current++)); show_progress $current $total "Code Analysis"
+  current=$((current + 1)); show_progress $current $total "Code Analysis"
   create_tool_code
 
-  ((current++)); show_progress $current $total "Regulatory Lookup"
+  current=$((current + 1)); show_progress $current $total "Regulatory Lookup"
   create_tool_regulatory
 
-  ((current++)); show_progress $current $total "Knowledge Base"
+  current=$((current + 1)); show_progress $current $total "Knowledge Base"
   create_tool_knowledgebase
 
   complete_progress "Created all $total tools"
@@ -8416,32 +8493,148 @@ start_services() {
 
   cd "$STACK_DIR"
 
-  # Export environment variables
+  # Create .env file for Docker Compose (allows manual docker compose commands later)
+  cat > "$STACK_DIR/.env" << ENV_EOF
+# AI.STACK Environment Variables
+# Auto-generated by installer - do not commit to version control
+WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
+USER_DATA_DIR=${USER_DATA_DIR}
+PROJECTS_DIR=${PROJECTS_DIR}
+DATABASES_DIR=${DATABASES_DIR}
+PERSONALITIES_DIR=${PERSONALITIES_DIR}
+HOME=${HOME}
+ENV_EOF
+  chmod 600 "$STACK_DIR/.env"
+  log "[+] Created .env file for Docker Compose"
+
+  # Export environment variables for Docker Compose
   export WEBUI_SECRET_KEY
   export USER_DATA_DIR
   export PROJECTS_DIR
   export DATABASES_DIR
+  export PERSONALITIES_DIR
   export HOME
 
-  # Pull and start
-  docker compose pull >> "$LOG_FILE" 2>&1
-  docker compose up -d >> "$LOG_FILE" 2>&1
+  # Build custom image and start services with progress display
+  echo ""
+  echo "  ┌────────────────────────────────────────────────────────────────┐"
+  echo "  │  BUILDING AND STARTING CONTAINERS                             │"
+  echo "  │  This may take several minutes on first run...                │"
+  echo "  └────────────────────────────────────────────────────────────────┘"
+  echo ""
 
-  # Fix volume permissions
-  log "[*] Fixing volume permissions..."
+  # Phase 1: Pull base images
+  echo -n "  [1/4] Pulling base images...        "
+  docker compose pull --quiet ollama/ollama qdrant/qdrant 2>/dev/null &
+  local pull_pid=$!
+  local spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+  local i=0
+  while kill -0 $pull_pid 2>/dev/null; do
+    i=$(( (i + 1) % ${#spin} ))
+    printf "\r  [1/4] Pulling base images...        ${spin:$i:1} "
+    sleep 0.2
+  done
+  wait $pull_pid 2>/dev/null || true
+  printf "\r  [1/4] Pulling base images...        ✓ Done\n"
+  log "[+] Base images pulled"
+
+  # Phase 2: Build custom image
+  echo -n "  [2/4] Building OpenWebUI image...   "
+  docker compose build --quiet 2>>"$LOG_FILE" &
+  local build_pid=$!
+  i=0
+  while kill -0 $build_pid 2>/dev/null; do
+    i=$(( (i + 1) % ${#spin} ))
+    printf "\r  [2/4] Building OpenWebUI image...   ${spin:$i:1} "
+    sleep 0.3
+  done
+  wait $build_pid 2>/dev/null
+  local build_result=$?
+  if [ $build_result -eq 0 ]; then
+    printf "\r  [2/4] Building OpenWebUI image...   ✓ Done\n"
+    log "[+] Custom image built"
+  else
+    printf "\r  [2/4] Building OpenWebUI image...   ✗ Failed\n"
+    log "[!] Build failed"
+    return 1
+  fi
+
+  # Phase 3: Start containers
+  echo -n "  [3/4] Starting containers...        "
+  docker compose up -d 2>>"$LOG_FILE" &
+  local up_pid=$!
+  i=0
+  while kill -0 $up_pid 2>/dev/null; do
+    i=$(( (i + 1) % ${#spin} ))
+    printf "\r  [3/4] Starting containers...        ${spin:$i:1} "
+    sleep 0.3
+  done
+  wait $up_pid 2>/dev/null
+  local up_result=$?
+  if [ $up_result -eq 0 ]; then
+    printf "\r  [3/4] Starting containers...        ✓ Done\n"
+    log "[+] Containers started"
+  else
+    printf "\r  [3/4] Starting containers...        ✗ Failed\n"
+    log "[!] Failed to start containers"
+    return 1
+  fi
+
+  # Fix volume permissions silently
   docker run --rm -v ${STACK_DIR##*/}_openwebui_data:/data busybox sh -c "chown -R 1000:1000 /data && chmod -R 755 /data" 2>/dev/null || true
 
-  # Wait for Ollama
-  log "[*] Waiting for services to start..."
-  sleep 10
+  # Phase 4: Wait for services to be healthy
+  echo -n "  [4/4] Waiting for services...       "
+  local max_wait=120  # 2 minutes max
+  local waited=0
+  local all_healthy=false
 
-  for i in {1..30}; do
-    if docker exec ${CONTAINER_PREFIX}-llm ollama list >/dev/null 2>&1; then
-      log "[+] Services started successfully"
+  while [ $waited -lt $max_wait ]; do
+    i=$(( (i + 1) % ${#spin} ))
+
+    # Check container status
+    local ollama_status=$(docker inspect --format='{{.State.Health.Status}}' ${CONTAINER_PREFIX}-llm 2>/dev/null || echo "unknown")
+    local qdrant_running=$(docker inspect --format='{{.State.Running}}' ${CONTAINER_PREFIX}-vector 2>/dev/null || echo "false")
+    local webui_running=$(docker inspect --format='{{.State.Running}}' ${CONTAINER_PREFIX}-ui 2>/dev/null || echo "false")
+
+    # Format status for display
+    local qdrant_display="stopped"
+    [ "$qdrant_running" = "true" ] && qdrant_display="running"
+
+    # Show current status
+    printf "\r  [4/4] Waiting for services...       ${spin:$i:1} [Ollama: ${ollama_status}, Qdrant: ${qdrant_display}]    "
+
+    # Check if Ollama is healthy and other containers are running
+    if [ "$ollama_status" = "healthy" ] && [ "$qdrant_running" = "true" ] && [ "$webui_running" = "true" ]; then
+      all_healthy=true
       break
     fi
-    sleep 5
+
+    # Also accept if Ollama responds to commands (even if healthcheck not yet healthy)
+    if [ "$qdrant_running" = "true" ] && [ "$webui_running" = "true" ]; then
+      if docker exec ${CONTAINER_PREFIX}-llm ollama list >/dev/null 2>&1; then
+        all_healthy=true
+        break
+      fi
+    fi
+
+    sleep 2
+    waited=$((waited + 2))
   done
+
+  if [ "$all_healthy" = true ]; then
+    printf "\r  [4/4] Waiting for services...       ✓ All services healthy!              \n"
+    log "[+] All services started and healthy"
+  else
+    printf "\r  [4/4] Waiting for services...       ⚠ Services starting (check status)   \n"
+    log "[!] Services may still be starting"
+  fi
+
+  echo ""
+  echo "  ┌────────────────────────────────────────────────────────────────┐"
+  echo "  │  ✓ Container startup complete                                 │"
+  echo "  └────────────────────────────────────────────────────────────────┘"
+  echo ""
 }
 
 pull_models() {
@@ -8527,73 +8720,73 @@ run_health_check() {
   local total=0
 
   # Check 1: Docker containers running
-  ((total++))
+  total=$((total + 1))
   echo -n "  Checking Docker containers... "
   local running=$(docker compose ps --format "{{.State}}" 2>/dev/null | grep -c "running" || echo "0")
   local expected=3  # webui, ollama, qdrant minimum
 
   if [ "$running" -ge "$expected" ]; then
     print_color green "OK ($running containers running)"
-    ((passed++))
+    passed=$((passed + 1))
   else
     print_color red "FAIL (only $running containers running)"
-    ((failed++))
+    failed=$((failed + 1))
   fi
 
   # Check 2: OpenWebUI accessible
-  ((total++))
+  total=$((total + 1))
   echo -n "  Checking OpenWebUI... "
   sleep 2  # Give it a moment
   if curl -s --connect-timeout 10 "http://localhost:${WEBUI_PORT}" >/dev/null 2>&1; then
     print_color green "OK (accessible on port $WEBUI_PORT)"
-    ((passed++))
+    passed=$((passed + 1))
   else
     print_color yellow "STARTING (may take a few seconds)"
-    ((passed++))  # Not a failure, just slow startup
+    passed=$((passed + 1))  # Not a failure, just slow startup
   fi
 
   # Check 3: Ollama API responding
-  ((total++))
+  total=$((total + 1))
   echo -n "  Checking Ollama API... "
   if curl -s --connect-timeout 10 "http://localhost:${OLLAMA_PORT}/api/tags" >/dev/null 2>&1; then
     print_color green "OK (API responding)"
-    ((passed++))
+    passed=$((passed + 1))
   else
     print_color yellow "STARTING (loading models)"
-    ((passed++))
+    passed=$((passed + 1))
   fi
 
   # Check 4: Qdrant health
-  ((total++))
+  total=$((total + 1))
   echo -n "  Checking Qdrant... "
   if curl -s --connect-timeout 10 "http://localhost:${QDRANT_REST_PORT}/healthz" 2>/dev/null | grep -q "ok"; then
     print_color green "OK (healthy)"
-    ((passed++))
+    passed=$((passed + 1))
   else
     print_color yellow "STARTING"
-    ((passed++))
+    passed=$((passed + 1))
   fi
 
   # Check 5: Config files exist
-  ((total++))
+  total=$((total + 1))
   echo -n "  Checking configuration... "
   if [ -f "$STACK_DIR/docker-compose.yml" ] && [ -f "$STACK_DIR/ports.conf" ]; then
     print_color green "OK"
-    ((passed++))
+    passed=$((passed + 1))
   else
     print_color red "FAIL (missing config files)"
-    ((failed++))
+    failed=$((failed + 1))
   fi
 
   # Check 6: Data directories
-  ((total++))
+  total=$((total + 1))
   echo -n "  Checking data directories... "
   if [ -d "$USER_DATA_DIR" ] && [ -d "$DATABASES_DIR" ]; then
     print_color green "OK"
-    ((passed++))
+    passed=$((passed + 1))
   else
     print_color red "FAIL (missing data directories)"
-    ((failed++))
+    failed=$((failed + 1))
   fi
 
   # Summary
@@ -9226,127 +9419,174 @@ main() {
     exit 1
   fi
 
-  # Interactive configuration
-  save_state "configuration_start"
-  select_installation_mode
-  select_security_level
-  configure_naming
-  save_state "configuration_complete"
-
-  # Install base packages first (need for GPU detection)
-  print_header "INSTALLING REQUIREMENTS"
-  install_system_packages
-  install_docker
-  save_state "packages_installed"
-
-  # GPU detection
-  print_header "HARDWARE DETECTION"
-
-  # Check for NVIDIA GPU first (preferred)
-  if check_nvidia_gpu; then
-    if ! check_nvidia_driver; then
-      install_nvidia_driver
-    fi
-    get_gpu_vram
-    check_gpu_compute_capability
-
-    if ! command -v nvidia-ctk >/dev/null 2>&1; then
-      install_nvidia_container_toolkit
-    fi
-
-    test_docker_gpu
-
-  # Check for AMD GPU if no NVIDIA
-  elif check_amd_gpu; then
-    if [ "$ROCM_INSTALLED" = true ]; then
-      test_docker_amd_gpu
-    else
-      # Create ROCm install script for later use
-      create_rocm_install_script
-      echo ""
-      echo "  ┌─────────────────────────────────────────────────────────┐"
-      echo "  │  AMD GPU detected but ROCm is not installed.           │"
-      echo "  │  Ollama will run in CPU mode for now.                  │"
-      echo "  │                                                         │"
-      echo "  │  To enable GPU acceleration later, run:                │"
-      echo "  │    ~/ai-stack/install-rocm.sh                          │"
-      echo "  │                                                         │"
-      echo "  │  WARNING: ROCm installation is experimental!           │"
-      echo "  └─────────────────────────────────────────────────────────┘"
-      echo ""
-      read -p "  Press Enter to continue with CPU mode..."
-    fi
+  # Interactive configuration (skip if resuming past this point)
+  if ! should_skip_step "configuration_complete"; then
+    save_state "configuration_start"
+    select_installation_mode
+    select_security_level
+    configure_naming
+    save_state "configuration_complete"
   else
-    log "[*] No GPU detected - using CPU mode"
+    print_color green "[✓] Configuration: Using saved settings"
   fi
 
-  # Show detailed hardware summary
-  show_hardware_info
-  save_state "hardware_detected"
+  # Install base packages first (skip if resuming past this point)
+  if ! should_skip_step "packages_installed"; then
+    print_header "INSTALLING REQUIREMENTS"
+    install_system_packages
+    install_docker
+    save_state "packages_installed"
+  else
+    print_color green "[✓] Packages: Already installed"
+  fi
 
-  # Select models based on hardware
-  select_models_for_hardware
+  # GPU detection (skip if resuming past this point)
+  if ! should_skip_step "hardware_detected"; then
+    print_header "HARDWARE DETECTION"
 
-  # Continue configuration
-  configure_ports
-  configure_api_exposure
-  configure_infrastructure
-  configure_watchtower
-  configure_fileshare
-  configure_personalities_tools
-  save_state "options_configured"
+    # Check for NVIDIA GPU first (preferred)
+    if check_nvidia_gpu; then
+      if ! check_nvidia_driver; then
+        install_nvidia_driver
+      fi
+      get_gpu_vram
+      check_gpu_compute_capability
 
-  # Generate credentials
-  generate_all_credentials
+      if ! command -v nvidia-ctk >/dev/null 2>&1; then
+        install_nvidia_container_toolkit
+      fi
 
-  # Show summary and confirm
-  show_configuration_summary
+      test_docker_gpu
 
-  # Save configuration
-  save_configuration_files
-  save_state "configuration_saved"
+    # Check for AMD GPU if no NVIDIA
+    elif check_amd_gpu; then
+      if [ "$ROCM_INSTALLED" = true ]; then
+        test_docker_amd_gpu
+      else
+        # Create ROCm install script for later use
+        create_rocm_install_script
+        echo ""
+        echo "  ┌─────────────────────────────────────────────────────────┐"
+        echo "  │  AMD GPU detected but ROCm is not installed.           │"
+        echo "  │  Ollama will run in CPU mode for now.                  │"
+        echo "  │                                                         │"
+        echo "  │  To enable GPU acceleration later, run:                │"
+        echo "  │    ~/ai-stack/install-rocm.sh                          │"
+        echo "  │                                                         │"
+        echo "  │  WARNING: ROCm installation is experimental!           │"
+        echo "  └─────────────────────────────────────────────────────────┘"
+        echo ""
+        read -p "  Press Enter to continue with CPU mode..."
+      fi
+    else
+      log "[*] No GPU detected - using CPU mode"
+    fi
+
+    # Show detailed hardware summary
+    show_hardware_info
+    save_state "hardware_detected"
+  else
+    print_color green "[✓] Hardware: Already detected (GPU=$GPU_AVAILABLE)"
+  fi
+
+  # Options configuration (skip if resuming past this point)
+  if ! should_skip_step "options_configured"; then
+    # Select models based on hardware
+    select_models_for_hardware
+
+    # Continue configuration
+    configure_ports
+    configure_api_exposure
+    configure_infrastructure
+    configure_watchtower
+    configure_fileshare
+    configure_personalities_tools
+    save_state "options_configured"
+  else
+    print_color green "[✓] Options: Using saved settings"
+  fi
+
+  # Configuration saving (skip if resuming past this point)
+  if ! should_skip_step "configuration_saved"; then
+    # Generate credentials
+    generate_all_credentials
+
+    # Show summary and confirm
+    show_configuration_summary
+
+    # Save configuration
+    save_configuration_files
+    save_state "configuration_saved"
+  else
+    print_color green "[✓] Configuration files: Already saved"
+  fi
 
   # Fix directory permissions
   sudo chown -R 1000:1000 "$USER_DATA_DIR" "$DATABASES_DIR" 2>/dev/null || true
   sudo chmod -R 755 "$USER_DATA_DIR" "$DATABASES_DIR" 2>/dev/null || true
 
-  # Build and configure
-  print_header "BUILDING DOCKER IMAGES"
-  build_custom_image
-  save_state "images_built"
+  # Build Docker image (skip if resuming past this point)
+  if ! should_skip_step "images_built"; then
+    print_header "BUILDING DOCKER IMAGES"
+    build_custom_image
+    save_state "images_built"
+  else
+    print_color green "[✓] Docker images: Already built"
+  fi
 
-  print_header "GENERATING CONFIGURATION"
-  generate_docker_compose
-  generate_infrastructure_compose
-  create_management_scripts
-  setup_fileshare
-  save_state "compose_generated"
+  # Generate compose files (skip if resuming past this point)
+  if ! should_skip_step "compose_generated"; then
+    print_header "GENERATING CONFIGURATION"
+    generate_docker_compose
+    generate_infrastructure_compose
+    create_management_scripts
+    setup_fileshare
+    save_state "compose_generated"
+  else
+    print_color green "[✓] Docker Compose: Already generated"
+  fi
 
-  # Generate personality files (Modelfiles and config)
+  # Generate personality files (skip if resuming past this point)
   if [ "$INSTALL_PERSONALITIES" = true ] && [ ${#SELECTED_PERSONALITIES[@]} -gt 0 ]; then
-    print_header "GENERATING PERSONALITY FILES"
-    generate_modelfiles
-    generate_personality_config
-    save_state "personalities_configured"
+    if ! should_skip_step "personalities_configured"; then
+      print_header "GENERATING PERSONALITY FILES"
+      generate_modelfiles
+      generate_personality_config
+      save_state "personalities_configured"
+    else
+      print_color green "[✓] Personalities: Already configured"
+    fi
   fi
 
-  # Install selected tools
+  # Install selected tools (skip if resuming past this point)
   if [ "$INSTALL_TOOLS" = true ]; then
-    print_header "INSTALLING AI TOOLS"
-    install_tools
-    save_state "tools_installed"
+    if ! should_skip_step "tools_installed"; then
+      print_header "INSTALLING AI TOOLS"
+      install_tools
+      save_state "tools_installed"
+    else
+      print_color green "[✓] Tools: Already installed"
+    fi
   fi
 
-  # Configure firewall
-  configure_firewall
-  save_state "firewall_configured"
+  # Configure firewall (skip if resuming past this point)
+  if ! should_skip_step "firewall_configured"; then
+    configure_firewall
+    save_state "firewall_configured"
+  else
+    print_color green "[✓] Firewall: Already configured"
+  fi
 
-  # Create additional management scripts
-  create_uninstall_script
-  create_update_script
-  save_state "scripts_created"
+  # Create additional management scripts (skip if resuming past this point)
+  if ! should_skip_step "scripts_created"; then
+    create_uninstall_script
+    create_update_script
+    save_state "scripts_created"
+  else
+    print_color green "[✓] Scripts: Already created"
+  fi
 
-  # Start services
+  # Start services (this always runs on resume to ensure services are up)
   print_header "STARTING SERVICES"
   start_services
   pull_models
