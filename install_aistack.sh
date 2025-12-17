@@ -3908,6 +3908,9 @@ generate_infrastructure_compose() {
 networks:
   infra-net:
     driver: bridge
+  # Connect to the main AI stack network so Portainer can manage all containers
+  ${DOCKER_NETWORK_NAME}:
+    external: true
 
 volumes:
   portainer_data:
@@ -3931,7 +3934,9 @@ EOF
     image: portainer/portainer-ce:latest
     container_name: ${CONTAINER_PREFIX}-portainer
     restart: unless-stopped
-    networks: [infra-net]
+    networks:
+      - infra-net
+      - ${DOCKER_NETWORK_NAME}
     ports:
       - "${PORTAINER_BIND}"
     volumes:
@@ -8637,6 +8642,84 @@ ENV_EOF
   echo ""
 }
 
+start_infrastructure() {
+  # Check if any infrastructure services were selected
+  if [ "$INSTALL_PORTAINER" != true ] && [ "$INSTALL_N8N" != true ] && [ "$INSTALL_PAPERLESS" != true ] && [ "$INSTALL_WATCHTOWER" != true ]; then
+    log "[*] No infrastructure services selected, skipping"
+    return
+  fi
+
+  local INFRA_DIR="$STACK_DIR/infrastructure"
+
+  if [ ! -f "$INFRA_DIR/docker-compose.yml" ]; then
+    log "[!] Infrastructure compose file not found"
+    return
+  fi
+
+  echo ""
+  echo "  ┌────────────────────────────────────────────────────────────────┐"
+  echo "  │  STARTING INFRASTRUCTURE SERVICES                             │"
+  echo "  └────────────────────────────────────────────────────────────────┘"
+  echo ""
+
+  # Build list of services being started
+  local services=""
+  [ "$INSTALL_PORTAINER" = true ] && services="${services}Portainer, "
+  [ "$INSTALL_N8N" = true ] && services="${services}n8n, "
+  [ "$INSTALL_PAPERLESS" = true ] && services="${services}Paperless, "
+  [ "$INSTALL_WATCHTOWER" = true ] && services="${services}Watchtower, "
+  services="${services%, }"  # Remove trailing comma
+
+  echo "  Starting: $services"
+  echo ""
+
+  cd "$INFRA_DIR"
+
+  # Start infrastructure with spinner
+  local spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+  local i=0
+
+  echo -n "  [1/2] Pulling images...              "
+  docker compose pull --quiet 2>>"$LOG_FILE" &
+  local pull_pid=$!
+  while kill -0 $pull_pid 2>/dev/null; do
+    i=$(( (i + 1) % ${#spin} ))
+    printf "\r  [1/2] Pulling images...              ${spin:$i:1} "
+    sleep 0.3
+  done
+  wait $pull_pid 2>/dev/null || true
+  printf "\r  [1/2] Pulling images...              ✓ Done\n"
+
+  echo -n "  [2/2] Starting containers...         "
+  docker compose up -d 2>>"$LOG_FILE" &
+  local up_pid=$!
+  while kill -0 $up_pid 2>/dev/null; do
+    i=$(( (i + 1) % ${#spin} ))
+    printf "\r  [2/2] Starting containers...         ${spin:$i:1} "
+    sleep 0.3
+  done
+  wait $up_pid 2>/dev/null
+  local result=$?
+
+  if [ $result -eq 0 ]; then
+    printf "\r  [2/2] Starting containers...         ✓ Done\n"
+    log "[+] Infrastructure services started"
+  else
+    printf "\r  [2/2] Starting containers...         ✗ Failed\n"
+    log "[!] Failed to start infrastructure services"
+  fi
+
+  # Show access URLs
+  echo ""
+  echo "  Infrastructure services available at:"
+  [ "$INSTALL_PORTAINER" = true ] && echo "    • Portainer:  https://${SERVER_IP}:${PORTAINER_PORT}"
+  [ "$INSTALL_N8N" = true ] && echo "    • n8n:        http://${SERVER_IP}:${N8N_PORT}"
+  [ "$INSTALL_PAPERLESS" = true ] && echo "    • Paperless:  http://${SERVER_IP}:${PAPERLESS_PORT}"
+  echo ""
+
+  cd "$STACK_DIR"
+}
+
 pull_models() {
   # Skip if user chose not to install models
   if [ "${SKIP_MODEL_INSTALL:-false}" = true ]; then
@@ -9587,10 +9670,13 @@ main() {
   fi
 
   # Start services (this always runs on resume to ensure services are up)
-  print_header "STARTING SERVICES"
+  print_header "STARTING AI STACK"
   start_services
   pull_models
   save_state "services_started"
+
+  # Start infrastructure services if selected
+  start_infrastructure
 
   # Run health check
   print_header "VERIFYING INSTALLATION"
