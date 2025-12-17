@@ -17,7 +17,7 @@
 #    Rinkatecam & Atlas
 #
 #  REPOSITORY:
-#    https://github.com/Rinkatecam/aistack
+#    https://github.com/Rinkatecam/Ai.Stack
 #
 #  MODEL CONFIG:
 #    Auto-fetched from repository (aistack-models.json)
