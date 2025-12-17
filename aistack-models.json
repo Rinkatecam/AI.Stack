@@ -1,0 +1,332 @@
+{
+  "_metadata": {
+    "name": "AI.STACK Model Configuration",
+    "version": "2024.12.16",
+    "last_updated": "2024-12-16T12:00:00Z",
+    "updated_by": "Rinkatecam & Atlas",
+    "description": "Dynamic model recommendations for AI.STACK installer based on hardware capabilities",
+    "sources": [
+      "https://ollama.com/library",
+      "https://localllm.in/blog/ollama-vram-requirements-for-local-llms",
+      "https://collabnix.com/best-ollama-models-in-2025-complete-performance-comparison/",
+      "https://www.codegpt.co/blog/best-ollama-model-for-coding"
+    ]
+  },
+
+  "hardware_tiers": {
+    "ultra": {
+      "description": "High-end workstation / Multi-GPU",
+      "min_vram_mb": 24000,
+      "min_ram_gb": 64,
+      "notes": "Can run 70B+ models, multiple large models simultaneously"
+    },
+    "high": {
+      "description": "Gaming PC / Professional workstation",
+      "min_vram_mb": 12000,
+      "min_ram_gb": 32,
+      "notes": "Can run 30B models comfortably, vision models"
+    },
+    "medium": {
+      "description": "Mid-range PC / Good laptop",
+      "min_vram_mb": 6000,
+      "min_ram_gb": 16,
+      "notes": "Can run 7B-14B models well"
+    },
+    "low": {
+      "description": "Entry-level / Older hardware",
+      "min_vram_mb": 0,
+      "min_ram_gb": 8,
+      "notes": "Limited to small models (3B-7B)"
+    }
+  },
+
+  "categories": {
+    "vision": {
+      "description": "Image understanding, OCR, visual analysis",
+      "ultra": {
+        "model": "qwen2.5vl:72b",
+        "size_gb": 42,
+        "vram_required_mb": 48000,
+        "context_length": 32768,
+        "notes": "Best vision model, GPT-4V level performance"
+      },
+      "high": {
+        "model": "qwen2.5vl:7b",
+        "size_gb": 5.5,
+        "vram_required_mb": 8000,
+        "context_length": 32768,
+        "notes": "Excellent vision, outperforms GPT-4o-mini"
+      },
+      "medium": {
+        "model": "minicpm-v:8b",
+        "size_gb": 5.5,
+        "vram_required_mb": 6000,
+        "context_length": 8192,
+        "notes": "GPT-4o level in compact size, best performance-per-parameter"
+      },
+      "low": {
+        "model": "moondream:1.8b",
+        "size_gb": 1.7,
+        "vram_required_mb": 2500,
+        "context_length": 2048,
+        "notes": "Lightweight vision for basic image understanding"
+      }
+    },
+
+    "reasoning": {
+      "description": "Complex analysis, math, logic, chain-of-thought",
+      "ultra": {
+        "model": "qwen3:72b",
+        "size_gb": 43,
+        "vram_required_mb": 48000,
+        "context_length": 131072,
+        "notes": "Top reasoning, matches DeepSeek-R1 and o1"
+      },
+      "high": {
+        "model": "qwen3:32b",
+        "size_gb": 20,
+        "vram_required_mb": 20000,
+        "context_length": 131072,
+        "notes": "Excellent reasoning with thinking mode"
+      },
+      "medium": {
+        "model": "deepseek-r1:14b",
+        "size_gb": 9,
+        "vram_required_mb": 10000,
+        "context_length": 65536,
+        "notes": "Strong reasoning, approaches o3-mini performance"
+      },
+      "low": {
+        "model": "deepseek-r1:8b",
+        "size_gb": 5,
+        "vram_required_mb": 6000,
+        "context_length": 65536,
+        "notes": "Good reasoning for limited hardware"
+      }
+    },
+
+    "coding": {
+      "description": "Code generation, debugging, programming assistance",
+      "ultra": {
+        "model": "qwen2.5-coder:32b",
+        "size_gb": 20,
+        "vram_required_mb": 22000,
+        "context_length": 131072,
+        "notes": "Top coding model, rivals GPT-4 for code"
+      },
+      "high": {
+        "model": "qwen2.5-coder:14b",
+        "size_gb": 9,
+        "vram_required_mb": 10000,
+        "context_length": 131072,
+        "notes": "Excellent coding, 92 programming languages"
+      },
+      "medium": {
+        "model": "qwen2.5-coder:7b",
+        "size_gb": 4.7,
+        "vram_required_mb": 6000,
+        "context_length": 131072,
+        "notes": "Best 7B coder, outperforms larger models"
+      },
+      "low": {
+        "model": "qwen2.5-coder:3b",
+        "size_gb": 2,
+        "vram_required_mb": 3000,
+        "context_length": 32768,
+        "notes": "Capable coding on minimal hardware"
+      }
+    },
+
+    "creative": {
+      "description": "Creative writing, storytelling, content generation",
+      "ultra": {
+        "model": "llama3.3:70b",
+        "size_gb": 43,
+        "vram_required_mb": 48000,
+        "context_length": 128000,
+        "notes": "Most capable Llama, GPT-4 level creativity"
+      },
+      "high": {
+        "model": "qwen3:32b",
+        "size_gb": 20,
+        "vram_required_mb": 20000,
+        "context_length": 131072,
+        "notes": "Excellent creative writing and roleplay"
+      },
+      "medium": {
+        "model": "qwen3:14b",
+        "size_gb": 9,
+        "vram_required_mb": 10000,
+        "context_length": 131072,
+        "notes": "Great balance of creativity and speed"
+      },
+      "low": {
+        "model": "qwen3:8b",
+        "size_gb": 5,
+        "vram_required_mb": 6000,
+        "context_length": 131072,
+        "notes": "Good creative output on modest hardware"
+      }
+    },
+
+    "general": {
+      "description": "All-purpose assistant, conversation, general tasks",
+      "ultra": {
+        "model": "llama3.3:70b",
+        "size_gb": 43,
+        "vram_required_mb": 48000,
+        "context_length": 128000,
+        "notes": "Most powerful general model, matches GPT-4"
+      },
+      "high": {
+        "model": "qwen3:32b",
+        "size_gb": 20,
+        "vram_required_mb": 20000,
+        "context_length": 131072,
+        "notes": "Excellent all-around performance"
+      },
+      "medium": {
+        "model": "qwen3:14b",
+        "size_gb": 9,
+        "vram_required_mb": 10000,
+        "context_length": 131072,
+        "notes": "Great general assistant, thinking mode"
+      },
+      "low": {
+        "model": "qwen3:8b",
+        "size_gb": 5,
+        "vram_required_mb": 6000,
+        "context_length": 131072,
+        "notes": "Solid general performance on any hardware"
+      }
+    },
+
+    "tooling": {
+      "description": "Function calling, tool use, automation",
+      "ultra": {
+        "model": "qwen3:32b",
+        "size_gb": 20,
+        "vram_required_mb": 20000,
+        "context_length": 131072,
+        "notes": "Best function calling, MCP compatible"
+      },
+      "high": {
+        "model": "qwen3:14b",
+        "size_gb": 9,
+        "vram_required_mb": 10000,
+        "context_length": 131072,
+        "notes": "Excellent tool use and structured output"
+      },
+      "medium": {
+        "model": "qwen3:8b",
+        "size_gb": 5,
+        "vram_required_mb": 6000,
+        "context_length": 131072,
+        "notes": "Good function calling on modest hardware"
+      },
+      "low": {
+        "model": "qwen3:4b",
+        "size_gb": 2.6,
+        "vram_required_mb": 3500,
+        "context_length": 131072,
+        "notes": "Basic tool use, works on minimal setup"
+      }
+    },
+
+    "embedding": {
+      "description": "Text embeddings for RAG and semantic search",
+      "ultra": {
+        "model": "mxbai-embed-large",
+        "size_gb": 1.2,
+        "vram_required_mb": 2000,
+        "dimensions": 1024,
+        "notes": "SOTA BERT-large performance, beats OpenAI"
+      },
+      "high": {
+        "model": "mxbai-embed-large",
+        "size_gb": 1.2,
+        "vram_required_mb": 2000,
+        "dimensions": 1024,
+        "notes": "Best quality embeddings"
+      },
+      "medium": {
+        "model": "nomic-embed-text",
+        "size_gb": 0.5,
+        "vram_required_mb": 1000,
+        "dimensions": 768,
+        "notes": "Great balance of speed and quality"
+      },
+      "low": {
+        "model": "nomic-embed-text",
+        "size_gb": 0.5,
+        "vram_required_mb": 1000,
+        "dimensions": 768,
+        "notes": "Efficient embeddings, 8K context"
+      }
+    },
+
+    "basic": {
+      "description": "Lightweight model for basic tasks, always available",
+      "ultra": {
+        "model": "qwen3:8b",
+        "size_gb": 5,
+        "vram_required_mb": 6000,
+        "context_length": 131072,
+        "notes": "Fast responses, thinking mode"
+      },
+      "high": {
+        "model": "qwen3:8b",
+        "size_gb": 5,
+        "vram_required_mb": 6000,
+        "context_length": 131072,
+        "notes": "Fast responses, thinking mode"
+      },
+      "medium": {
+        "model": "qwen3:4b",
+        "size_gb": 2.6,
+        "vram_required_mb": 3500,
+        "context_length": 131072,
+        "notes": "Quick and capable basic model"
+      },
+      "low": {
+        "model": "qwen3:1.7b",
+        "size_gb": 1.1,
+        "vram_required_mb": 2000,
+        "context_length": 32768,
+        "notes": "Minimal footprint, runs anywhere"
+      }
+    }
+  },
+
+  "personality_model_mapping": {
+    "_description": "Maps personality categories to model categories",
+    "vision": "vision",
+    "reasoning": "reasoning",
+    "coding": "coding",
+    "creative": "creative",
+    "basic": "basic"
+  },
+
+  "model_notes": {
+    "quantization": "All sizes assume Q4_K_M quantization (4-bit). Full precision requires ~4x more VRAM.",
+    "context": "Context length affects VRAM usage. Longer contexts need more memory.",
+    "cpu_fallback": "Models can run on CPU with RAM instead of VRAM, but 5-10x slower.",
+    "recommendations": "When in doubt, choose one tier lower than your hardware suggests for better responsiveness."
+  },
+
+  "changelog": [
+    {
+      "version": "2024.12.16",
+      "date": "2024-12-16",
+      "changes": [
+        "Initial release",
+        "Added Qwen3 series (released April 2025)",
+        "Added DeepSeek-R1 for reasoning",
+        "Added Qwen2.5-Coder for coding",
+        "Added Qwen2.5-VL for vision",
+        "Added MiniCPM-V as efficient vision option",
+        "Added mxbai-embed-large and nomic-embed-text for embeddings"
+      ]
+    }
+  ]
+}
