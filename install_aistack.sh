@@ -17,7 +17,7 @@
 #    Rinkatecam & Atlas
 #
 #  REPOSITORY:
-#    https://github.com/Rinkatecam/Ai.Stack
+#    https://github.com/Rinkatecam/AI.Stack
 #
 #  MODEL CONFIG:
 #    Auto-fetched from repository (aistack-models.json)
@@ -183,7 +183,7 @@ set -eo pipefail
 # Set your GitHub username and repo name here - everything else auto-configures
 #------------------------------------------------------------------------------
 GITHUB_USER="Rinkatecam"
-GITHUB_REPO="aistack"
+GITHUB_REPO="AI.Stack"
 GITHUB_BRANCH="main"
 
 # Auto-constructed URLs (no need to edit these)
@@ -4377,7 +4377,7 @@ title: Files & Documents Tool
 version: 2.0.0
 description: Search, read, and semantically query files with RAG support. Includes PDF reading with OCR and Qdrant vector search integration.
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, pymupdf, pytesseract, pdf2image, pillow, qdrant-client
 
 # SYSTEM PROMPT FOR AI - READ THIS CAREFULLY
@@ -4871,7 +4871,7 @@ title: SQL Database Tool
 version: 2.0.0
 description: SQLite database management for data storage, queries, and analysis.
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic
 
 # SYSTEM PROMPT FOR AI
@@ -5114,7 +5114,7 @@ title: Web Search Tool
 version: 2.0.0
 description: Search the internet using free methods (DuckDuckGo, Wikipedia, direct URL fetch). No API keys required!
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 """
 
 import os
@@ -5377,7 +5377,7 @@ title: Scientific Calculator
 version: 2.0.0
 description: Precise mathematical calculations, unit conversions, formula scaling, and statistical analysis.
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, numpy, scipy
 """
 
@@ -5684,7 +5684,7 @@ title: Chemical Properties Lookup
 version: 2.0.0
 description: Query PubChem database for chemical properties, safety data, and molecular information.
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, requests
 """
 
@@ -5914,7 +5914,7 @@ title: Data Visualization Tool
 version: 2.0.0
 description: Generate charts, graphs, and molecular structures. Displays inline in chat with download option.
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, matplotlib, numpy, pillow
 """
 
@@ -6179,7 +6179,7 @@ title: Shell Command Tool
 version: 2.0.0
 description: Execute shell commands (bash/cmd/powershell) with safety controls.
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 """
 
 import os
@@ -6340,7 +6340,7 @@ title: AI Agent Orchestrator
 version: 2.0.0
 description: Delegate tasks to specialized AI models, run parallel queries, and chain workflows.
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 """
 
 import os
@@ -6501,7 +6501,7 @@ title: Document Templates Tool
 version: 1.0.0
 description: Process DOCX templates with {{ PLACEHOLDER }} syntax. AI fills placeholders with user confirmation.
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, python-docx
 """
 
@@ -6684,7 +6684,7 @@ title: Code Analysis Tool
 version: 1.0.0
 description: Code formatting, analysis, syntax checking, and documentation generation.
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic
 """
 
@@ -6837,7 +6837,7 @@ title: Regulatory Lookup Tool
 version: 1.0.0
 description: Multi-region regulatory database lookup for EU, US, WHO standards and medical device regulations.
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, requests
 """
 
@@ -6991,7 +6991,7 @@ title: Knowledge Base Tool
 version: 1.0.0
 description: Experience database with auto-indexing of DOCX files and image comparison capabilities.
 author: AI.STACK
-author_url: https://github.com/Rinkatecam/aistack
+author_url: https://github.com/Rinkatecam/AI.Stack
 requirements: pydantic, python-docx, pillow, qdrant-client
 """
 
@@ -8739,7 +8739,7 @@ case "$choice" in
       # Remove aistack images but not ollama
       docker images --format "{{.Repository}}:{{.Tag}}" | grep -E "^aistack" | xargs -r docker rmi 2>/dev/null || true
       echo -e "${GREEN}Done! AI.STACK removed. Models preserved.${NC}"
-      echo "Reinstall with: curl -fsSL https://raw.githubusercontent.com/Rinkatecam/aistack/main/install_aistack.sh | bash"
+      echo "Reinstall with: curl -fsSL https://raw.githubusercontent.com/Rinkatecam/AI.Stack/main/install_aistack.sh | bash"
     else
       echo "Cancelled."
     fi
@@ -8768,7 +8768,7 @@ case "$choice" in
       echo -e "${GREEN}Done! AI.STACK completely removed.${NC}"
       echo ""
       echo "To reinstall:"
-      echo "  curl -fsSL https://raw.githubusercontent.com/Rinkatecam/aistack/main/install_aistack.sh | bash"
+      echo "  curl -fsSL https://raw.githubusercontent.com/Rinkatecam/AI.Stack/main/install_aistack.sh | bash"
     else
       echo "Cancelled. (You must type 'DELETE' exactly)"
     fi
@@ -8803,7 +8803,7 @@ create_update_script() {
 set -e
 
 STACK_DIR="$HOME/ai-stack"
-GITHUB_RAW="https://raw.githubusercontent.com/Rinkatecam/aistack/main"
+GITHUB_RAW="https://raw.githubusercontent.com/Rinkatecam/AI.Stack/main"
 BACKUP_DIR="$STACK_DIR/backups/pre-update-$(date +%Y%m%d_%H%M%S)"
 
 # Colors

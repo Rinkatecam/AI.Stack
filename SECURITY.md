@@ -47,7 +47,7 @@ When using AI.STACK:
 
 1. **Review the script** before running:
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/Rinkatecam/aistack/main/install_aistack.sh -o install_aistack.sh
+   curl -fsSL https://raw.githubusercontent.com/Rinkatecam/AI.Stack/main/install_aistack.sh -o install_aistack.sh
    less install_aistack.sh  # Review the code
    bash install_aistack.sh
    ```

@@ -5,7 +5,7 @@
 Deploy a complete, secure, local AI environment on your own hardware. No cloud dependencies, no API costs, full data privacy.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Rinkatecam/aistack/main/install_aistack.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Rinkatecam/AI.Stack/main/install_aistack.sh | bash
 ```
 
 ---
@@ -29,7 +29,7 @@ All running on YOUR hardware, with YOUR data staying private.
 ### One-Command Installation
 ```bash
 # That's it. One command.
-curl -fsSL https://raw.githubusercontent.com/Rinkatecam/aistack/main/install_aistack.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Rinkatecam/AI.Stack/main/install_aistack.sh | bash
 ```
 
 ### Smart Hardware Detection
@@ -98,7 +98,7 @@ Pre-configured tool sets for different teams:
 
 ### 1. Install
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Rinkatecam/aistack/main/install_aistack.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Rinkatecam/AI.Stack/main/install_aistack.sh | bash
 ```
 
 ### 2. Access
@@ -114,7 +114,7 @@ First user becomes admin. Create your account and start chatting!
 ### Pre-flight Check (Recommended First)
 ```bash
 # Check if your system is ready
-curl -fsSL https://raw.githubusercontent.com/Rinkatecam/aistack/main/install_aistack.sh -o install_aistack.sh
+curl -fsSL https://raw.githubusercontent.com/Rinkatecam/AI.Stack/main/install_aistack.sh -o install_aistack.sh
 bash install_aistack.sh --check
 ```
 
@@ -302,8 +302,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/Rinkatecam/aistack/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Rinkatecam/aistack/discussions)
+- **Issues**: [GitHub Issues](https://github.com/Rinkatecam/AI.Stack/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Rinkatecam/AI.Stack/discussions)
 
 ---
 
