@@ -3899,6 +3899,10 @@ generate_infrastructure_compose() {
     PORTAINER_BIND="127.0.0.1:${PORTAINER_PORT}:9443"
   fi
 
+  # Get the actual network name (Docker prefixes with project name)
+  local STACK_NAME=$(basename "$STACK_DIR")
+  local EXTERNAL_NETWORK="${STACK_NAME}_${DOCKER_NETWORK_NAME}"
+
   cat > "$INFRA_DIR/docker-compose.yml" <<EOF
 #==============================================================================
 # AI.STACK Infrastructure Services
@@ -3908,9 +3912,10 @@ generate_infrastructure_compose() {
 networks:
   infra-net:
     driver: bridge
-  # Connect to the main AI stack network so Portainer can manage all containers
-  ${DOCKER_NETWORK_NAME}:
+  # Connect to the main AI stack network so Portainer/Watchtower can see all containers
+  aistack-main:
     external: true
+    name: ${EXTERNAL_NETWORK}
 
 volumes:
   portainer_data:
@@ -3936,7 +3941,7 @@ EOF
     restart: unless-stopped
     networks:
       - infra-net
-      - ${DOCKER_NETWORK_NAME}
+      - aistack-main
     ports:
       - "${PORTAINER_BIND}"
     volumes:
@@ -4056,20 +4061,26 @@ EOF
   # WATCHTOWER - Docker Auto-Updates
   # Schedule: Daily at $(printf "%02d:%02d" $WATCHTOWER_UPDATE_HOUR $WATCHTOWER_UPDATE_MINUTE)
   # Mode: ${WATCHTOWER_MODE}
+  # Monitors ALL containers on this host (AI stack + infrastructure)
   #============================================================================
   watchtower:
     image: containrrr/watchtower:latest
     container_name: ${CONTAINER_PREFIX}-watchtower
     restart: unless-stopped
-    networks: [infra-net]
+    networks:
+      - infra-net
+      - aistack-main
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
     environment:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_SCHEDULE=${CRON_SCHEDULE}
       - WATCHTOWER_INCLUDE_STOPPED=false
       - WATCHTOWER_ROLLING_RESTART=true
-      - TZ=Europe/Berlin
+      - WATCHTOWER_TIMEOUT=60s
+      - WATCHTOWER_LIFECYCLE_HOOKS=true
+      - TZ=\${TZ:-Europe/Berlin}
 ${WATCHTOWER_ENV}
 EOF
 
@@ -9577,13 +9588,16 @@ main() {
     # Select models based on hardware
     select_models_for_hardware
 
-    # Continue configuration
+    # First: Ask WHAT to install
+    configure_infrastructure         # Portainer, n8n, Paperless
+    configure_watchtower             # Auto-updates
+    configure_personalities_tools    # AI personalities and tools
+    configure_fileshare              # File sharing
+
+    # Then: Configure HOW (ports, exposure) based on selections
     configure_ports
     configure_api_exposure
-    configure_infrastructure
-    configure_watchtower
-    configure_fileshare
-    configure_personalities_tools
+
     save_state "options_configured"
   else
     print_color green "[✓] Options: Using saved settings"
